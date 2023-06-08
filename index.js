@@ -1,7 +1,12 @@
 document.addEventListener("DOMContentLoaded", function () {
+
+
   tf.ready().then(() => {
+
     const modelPath = "ttt_model.json";
+
     tf.tidy(() => {
+      
       tf.loadLayersModel(modelPath).then((model) => {
         // Función para realizar una jugada de la IA
         function jugarIA(tablero) {

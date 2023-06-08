@@ -50,7 +50,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0/dist/tf.min.js"></script>
     <script>
       document.addEventListener("DOMContentLoaded", async function () {
+
         const modelPath = "/ttt_model.json";
+        
         await tf.loadLayersModel(modelPath).then(function (model) {
           // Tablero y jugadores
           let tablero = [0, 0, 0, 0, 0, 0, 0, 0, 0];
