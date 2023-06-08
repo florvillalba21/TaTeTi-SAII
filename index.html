@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Tateti con IA</title>
+    <style>
+      table {
+        border-collapse: collapse;
+        width: 250px;
+        height: 250px;
+        margin: 0 auto;
+      }
+
+      td {
+        width: 20px;
+        height: 20px;
+        text-align: center;
+        font-size: 15px;
+        cursor: pointer;
+      }
+
+      tr:not(:last-child) {
+        border-bottom: 2px solid black;
+      }
+
+      td:not(:last-child) {
+        border-right: 2px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Tateti con IA</h1>
+    <table>
+      <tr>
+        <td id="cell-0"></td>
+        <td id="cell-1"></td>
+        <td id="cell-2"></td>
+      </tr>
+      <tr>
+        <td id="cell-3"></td>
+        <td id="cell-4"></td>
+        <td id="cell-5"></td>
+      </tr>
+      <tr>
+        <td id="cell-6"></td>
+        <td id="cell-7"></td>
+        <td id="cell-8"></td>
+      </tr>
+    </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.9.0/dist/tf.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", async function () {
+        const modelPath = "/ttt_model.json";
+        await tf.loadLayersModel(modelPath).then(function (model) {
+          // Tablero y jugadores
+          let tablero = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+          const jugadorX = -1;
+          const jugadorO = 1;
+          let turno = jugadorX;
+
+          // Función para realizar una jugada
+          function hacerJugada(casilla) {
+            if (tablero[casilla] !== 0) {
+              return; // Casilla ya ocupada, no se puede jugar aquí
+            }
+
+            if (turno === jugadorX) {
+              tablero[casilla] = jugadorX;
+              document.getElementById(`cell-${casilla}`).textContent = "X";
+            } else if (turno === jugadorO) {
+              tablero[casilla] = jugadorO;
+              document.getElementById(`cell-${casilla}`).textContent = "O";
+            } else {
+              return; // No es el turno de ningún jugador, no se puede jugar aquí
+            }
+
+            // Verificar si hay un ganador o empate
+            if (hayGanador(tablero, turno)) {
+              mostrarMensaje(turno === jugadorX ? "¡Ganaste!" : "¡Perdiste!");
+              reiniciarJuego();
+            } else if (!tablero.includes(0)) {
+              mostrarMensaje("¡Empate!");
+              reiniciarJuego();
+            } else {
+              // Cambiar turno
+              turno = turno === jugadorX ? jugadorO : jugadorX;
+
+              if (turno === jugadorO) {
+                
+                setTimeout(() => jugarIA(), 500);
+              } 
+            }
+          }
+
+          async function jugarIA() {
+            const tensorTablero = tf.tensor(tablero);
+            const result = await model.predict(tensorTablero.reshape([1, 9]));
+            const jugadasDisponibles = [];
+
+            result.data().then((data) => {
+              for (let i = 0; i < data.length; i++) {
+                if (tablero[i] === 0) {
+                  jugadasDisponibles.push({ index: i, score: data[i] });
+                }
+              }
+              jugadasDisponibles.sort((a, b) => b.score - a.score);
+
+              if (jugadasDisponibles.length > 0) {
+                hacerJugada(jugadasDisponibles[0].index);
+              }
+            });
+          }
+
+          // Función para verificar si hay un ganador
+          function hayGanador(tablero, jugador) {
+            const combinacionesGanadoras = [
+              [0, 1, 2],
+              [3, 4, 5],
+              [6, 7, 8], // filas
+              [0, 3, 6],
+              [1, 4, 7],
+              [2, 5, 8], // columnas
+              [0, 4, 8],
+              [2, 4, 6], // diagonales
+            ];
+
+            for (let combinacion of combinacionesGanadoras) {
+              if (
+                tablero[combinacion[0]] === jugador &&
+                tablero[combinacion[1]] === jugador &&
+                tablero[combinacion[2]] === jugador 
+              ) {
+                return true;
+              }
+            }
+
+            return false;
+          }
+
+          // Función para mostrar un mensaje en el DOM
+          function mostrarMensaje(mensaje) {
+            alert(mensaje);
+          }
+
+          // Función para reiniciar el juego
+          function reiniciarJuego() {
+            tablero = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+            const celdas = document.getElementsByTagName("td");
+            for (let i = 0; i < celdas.length; i++) {
+              celdas[i].textContent = "";
+            }
+            turno = jugadorX;
+          }
+
+          // Manejar eventos de clic en las celdas del tablero
+          const celdas = document.getElementsByTagName("td");
+          for (let i = 0; i < celdas.length; i++) {
+            celdas[i].addEventListener("click", function () {
+              hacerJugada(i);
+            });
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
